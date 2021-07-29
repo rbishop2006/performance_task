@@ -174,6 +174,7 @@ const UserTable: React.FC = () => {
                 setShowActiveUsersOnly={setShowActiveUsersOnly}
             />
             <button onClick={() => handleCreateUser()}>Create User</button>
+
             {isEditState && userToEdit && (
                 <EditUserForm
                     userToEdit={userToEdit}
