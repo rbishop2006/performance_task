@@ -178,7 +178,13 @@ const UserTable: React.FC = () => {
         setSelectedDistrict(parseInt(e.target.value));
 
     return (
-        <>
+        <div
+            style={{
+                minWidth: "500px",
+                overflowX: "auto",
+                whiteSpace: "nowrap",
+            }}
+        >
             <Col span={24}>
                 <List
                     loading={users.length > 0 ? false : true}
@@ -199,8 +205,7 @@ const UserTable: React.FC = () => {
                                 margin: "auto",
                                 left: 0,
                                 right: 0,
-                                // check this breakpoint
-                                padding: "3rem 50px",
+                                padding: "3rem 24px",
                                 maxWidth: "1100px",
                                 zIndex: 1,
                                 backgroundColor: "white",
@@ -301,8 +306,8 @@ const UserTable: React.FC = () => {
                                 }}
                             >
                                 <Col span={2}>Id</Col>
-                                <Col span={4}>Last Name</Col>
-                                <Col span={4}>First Name</Col>
+                                <Col span={4}>Last</Col>
+                                <Col span={4}>First</Col>
                                 <Col span={2}>M.I.</Col>
                                 <Col span={4}>District</Col>
                                 <Col span={4}>Verified</Col>
@@ -398,7 +403,7 @@ const UserTable: React.FC = () => {
                     }}
                 ></BackTop>
             </Col>
-        </>
+        </div>
     );
 };
 

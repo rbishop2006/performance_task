@@ -14,9 +14,9 @@ const UserRow = ({
     handleEditState,
     handleDeleteUser,
 }: UserRowProps): JSX.Element => {
-    const [ellipsis, ,] = useState(true);
     const { confirm } = Modal;
     const { Text } = Typography;
+    const [ellipsis, ,] = useState(true);
 
     // confirm modal to delete user
     const showConfirm = () => {
@@ -38,7 +38,9 @@ const UserRow = ({
     const districtTooltip = {
         tooltip: displayDistrict(districts, user.district),
     };
-
+    const formatDateToolTip = {
+        tooltip: formatDate(user.created_at),
+    };
     return (
         <>
             <List.Item>
@@ -99,7 +101,18 @@ const UserRow = ({
                                     {displayVerified(user.verified)}
                                 </Col>
                                 <Col span={4}>
-                                    {formatDate(user.created_at)}
+                                    <Text
+                                        style={
+                                            ellipsis
+                                                ? { width: 300 }
+                                                : undefined
+                                        }
+                                        ellipsis={
+                                            ellipsis ? formatDateToolTip : false
+                                        }
+                                    >
+                                        {formatDate(user.created_at)}
+                                    </Text>
                                 </Col>
                             </Row>
                             <Row justify="end">

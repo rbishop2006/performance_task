@@ -1,3 +1,5 @@
+// interfaces
+
 export interface User {
     active: boolean;
     created_at: string;

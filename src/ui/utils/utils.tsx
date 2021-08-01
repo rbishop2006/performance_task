@@ -2,6 +2,8 @@ import { District } from "../types/types";
 import React from "react";
 import { CloseCircleTwoTone, CheckCircleTwoTone } from "@ant-design/icons";
 
+// util functions
+
 // creates a date SQL style date string
 export const createDate = (): string => {
     return new Date().toISOString().slice(0, 19).replace("T", " ");

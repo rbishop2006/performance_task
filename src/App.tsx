@@ -29,7 +29,7 @@ const App: React.FC = () => {
                 </Header>
                 <Content
                     style={{
-                        padding: "0 50px",
+                        // padding: "0 50px",
                         marginTop: 64,
                         backgroundColor: "white",
                     }}
