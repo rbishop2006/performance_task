@@ -1,3 +1,10 @@
+import { Col, Drawer, List, Row, Button, Tooltip, BackTop, Form } from "antd";
+import {
+    UserAddOutlined,
+    UserOutlined,
+    PlusOutlined,
+    EditOutlined,
+} from "@ant-design/icons";
 import React, { useState, useEffect, useRef } from "react";
 import EditUserForm from "../forms/EditUser";
 import NewUserForm from "../forms/NewUser";
@@ -5,21 +12,30 @@ import { District, User } from "../types/types";
 import { createDate } from "../utils/utils";
 import Filter from "./Filter";
 import UserRow from "./UserRow";
+import Modal from "antd/lib/modal/Modal";
 
 const UserTable: React.FC = () => {
+    // state
     const [users, setUsers] = useState<User[]>([]);
     const [districts, setDistricts] = useState<District[]>([]);
     const [showActiveUsersOnly, setShowActiveUsersOnly] =
         useState<boolean>(false);
-    const [selectedDistrict, setSelectedDistrict] = useState<number>(1);
+    const [selectedDistrict, setSelectedDistrict] = useState<number>(0);
     const [isEditState, setIsEditState] = useState<boolean>(false);
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
-    const [userToAdd, setUserToAdd] = useState<User>();
     const [creatingUserState, setCreatingUserState] = useState(false);
+    const [isActiveNewUser, setIsActiveNewUser] = useState(false);
 
+    // refs
     const isFetchingUsersRef = useRef<boolean>(false);
     const isFetchingDistrictsRef = useRef<boolean>(false);
 
+    // antd instances
+    const [addUserForm] = Form.useForm();
+    const [editUserForm] = Form.useForm();
+
+    // effects
+    // fetch users
     useEffect(() => {
         isFetchingUsersRef.current = false;
         const fetchUsers = async () => {
@@ -45,6 +61,7 @@ const UserTable: React.FC = () => {
         };
     }, []);
 
+    // fetch districts
     useEffect(() => {
         isFetchingDistrictsRef.current = false;
         const fetchDistricts = async () => {
@@ -69,213 +86,319 @@ const UserTable: React.FC = () => {
         };
     }, []);
 
-    const handleEditState = (user: User) => {
-        setIsEditState(true);
-        setUserToEdit(user);
-    };
-
-    const handleEditUser = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        if (userToEdit) {
-            const target = e.target as HTMLInputElement;
-
-            const value =
-                target?.name === "district"
-                    ? parseInt(target.value)
-                    : target?.type === "checkbox" // eslint-disable-next-line indent
-                    ? target.checked // eslint-disable-next-line indent
-                    : target.value;
-
-            const name = target.name;
-            setUserToEdit({ ...userToEdit, [name]: value });
+    // antd form method call guard
+    useEffect(() => {
+        if (editUserForm.__INTERNAL__.name) {
+            editUserForm.setFieldsValue(userToEdit);
         }
+    }, [editUserForm, userToEdit]);
+
+    // edit functions
+    // edit state
+    const handleEditState = (user: User) => {
+        setUserToEdit(user);
+        setIsEditState(true);
     };
 
-    const handleEditSubmit = (e: React.SyntheticEvent) => {
-        e.preventDefault();
+    // edit finish
+    const editUserOnFinish = (values: User) => {
+        setIsEditState(false);
         if (userToEdit) {
-            const editedUserIndex = users.findIndex(
-                (u: User) => u.id === userToEdit.id
+            setUsers((prevArr) =>
+                prevArr.splice(
+                    users.findIndex((u: User) => u.id === userToEdit.id),
+                    1,
+                    {
+                        id: userToEdit.id,
+                        first_name: values.first_name,
+                        middle_initial: values.middle_initial,
+                        last_name: values.last_name,
+                        email: values.email,
+                        district: values.district,
+                        active: values.active,
+                        verified: values.verified,
+                        created_at: userToEdit.created_at,
+                    }
+                )
             );
             setUserToEdit(null);
-            setIsEditState(false);
-            setUsers(users.splice(editedUserIndex, 1, userToEdit));
             setUsers([...users]);
         }
     };
 
-    const handleAddUser = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        if (userToAdd) {
-            const target = e.target as HTMLInputElement;
-
-            const value =
-                target?.name === "district"
-                    ? parseInt(target.value)
-                    : target?.type === "checkbox" // eslint-disable-next-line indent
-                    ? target.checked // eslint-disable-next-line indent
-                    : target.value;
-
-            const name = target.name;
-            setUserToAdd({ ...userToAdd, [name]: value });
-        }
+    // edit cancel
+    const handleEditUserOnCancel = () => {
+        editUserForm.resetFields();
+        setUserToEdit(null);
+        setIsEditState(false);
     };
 
-    const createNewUser = () => {
-        setUserToAdd({
-            active: false,
-            created_at: createDate(),
-            district: 0,
-            email: "",
-            first_name: "",
-            id: Math.random(),
-            last_name: "",
-            middle_initial: "",
-            verified: false,
-        });
+    // add user functions
+    // add finish
+    const addUserOnFinish = (values: {
+        first_name: string;
+        middle_initial?: string;
+        last_name: string;
+        email: string;
+        district: number;
+    }) => {
+        setCreatingUserState(false);
+        setUsers([
+            ...users,
+            {
+                active: isActiveNewUser,
+                created_at: createDate(),
+                district: values.district,
+                email: values.email,
+                first_name: values.first_name,
+                id: Math.random(),
+                last_name: values.last_name,
+                middle_initial: values.middle_initial,
+                verified: false,
+            },
+        ]);
+        addUserForm.resetFields();
+        setIsActiveNewUser(false);
     };
 
-    const handleCreateUser = () => {
-        createNewUser();
-        setCreatingUserState(true);
+    // add cancel
+    const handleNewUserOnCancel = () => {
+        setIsActiveNewUser(false);
+        addUserForm.resetFields();
+        setCreatingUserState(false);
     };
 
-    const addNewUserSubmit = (e: React.SyntheticEvent) => {
-        e.preventDefault();
-        if (userToAdd) {
-            setUserToEdit(null);
-            setCreatingUserState(false);
-            setUsers([...users, userToAdd]);
-        }
-    };
-
+    // delete user
     const handleDeleteUser = (userId: number) => {
         setUsers((prevUsers) => prevUsers.filter((u: User) => u.id !== userId));
     };
 
+    // number formatting
     const handleSelectedDistrict = (e: React.ChangeEvent<HTMLSelectElement>) =>
         setSelectedDistrict(parseInt(e.target.value));
 
-    console.log(users);
-    console.log(districts);
-    console.log("active users only?", showActiveUsersOnly);
-    console.log("user to add", userToEdit);
-    console.log("user to add", userToAdd);
-
     return (
-        <div className="admin-user-table" style={{ marginTop: "7rem" }}>
-            <Filter
-                districts={districts}
-                showActiveUsersOnly={showActiveUsersOnly}
-                selectedDistrict={selectedDistrict}
-                handleSelectedDistrict={handleSelectedDistrict}
-                setShowActiveUsersOnly={setShowActiveUsersOnly}
-            />
-            <button onClick={() => handleCreateUser()}>Create User</button>
-
-            {isEditState && userToEdit && (
-                <EditUserForm
-                    userToEdit={userToEdit}
-                    districts={districts}
-                    handleEditSubmit={handleEditSubmit}
-                    handleEditUser={handleEditUser}
-                />
-            )}
-            {creatingUserState && userToAdd && (
-                <NewUserForm
-                    userToAdd={userToAdd}
-                    districts={districts}
-                    handleAddUser={handleAddUser}
-                    addNewUserSubmit={addNewUserSubmit}
-                />
-            )}
-
-            <div
-                style={{
-                    border: "1px solid black",
-                    width: "50rem",
-                    marginTop: "2rem",
-                }}
-            >
-                <h2
-                    style={{ textAlign: "center", textDecoration: "underline" }}
-                >
-                    Users
-                </h2>
-                <ul
+        <>
+            <Col span={24}>
+                <List
+                    loading={users.length > 0 ? false : true}
+                    size="large"
+                    rowKey={JSON.stringify(Math.random())}
                     style={{
-                        listStyle: "none",
-                        paddingLeft: 0,
-                        height: "30rem",
+                        textAlign: "center",
+                        marginTop: "20rem",
+                        marginBottom: "20rem",
+                        zIndex: 0,
                     }}
-                >
-                    <li
-                        style={{
-                            fontWeight: 700,
-                            borderBottom: "2px solid black",
-                            marginBottom: "1rem",
-                            padding: "1rem",
-                        }}
-                    >
-                        <div
+                    header={
+                        <Col
+                            span={24}
                             style={{
-                                display: "flex",
-                                justifyContent: "space-evenly",
-                                textAlign: "center",
+                                position: "fixed",
+                                top: "4rem",
+                                margin: "auto",
+                                left: 0,
+                                right: 0,
+                                // check this breakpoint
+                                padding: "3rem 50px",
+                                maxWidth: "1100px",
+                                zIndex: 1,
+                                backgroundColor: "white",
+                                borderBottom: "1px solid #1890ff",
                             }}
                         >
-                            <div style={{ width: "5%" }}>ID</div>
-                            <div style={{ width: "20%" }}>Last Name</div>
-                            <div style={{ width: "20%" }}>First Name</div>
-                            <div style={{ width: "5%" }}>M.I.</div>
-                            <div style={{ width: "20%" }}>District</div>
-                            <div style={{ width: "10%" }}>Verified</div>
-                            <div style={{ width: "20%" }}>Created</div>
-                        </div>
-                    </li>
-                    {users &&
-                        showActiveUsersOnly &&
-                        users.map((user: User) => {
-                            if (user.active) {
-                                if (user.district === selectedDistrict) {
-                                    return (
-                                        <React.Fragment key={user.id}>
-                                            <UserRow
-                                                user={user}
-                                                districts={districts}
-                                                handleEditState={
-                                                    handleEditState
-                                                }
-                                                handleDeleteUser={
-                                                    handleDeleteUser
-                                                }
-                                            />
-                                        </React.Fragment>
-                                    );
-                                }
-                            }
-                        })}
-                    {users &&
-                        !showActiveUsersOnly &&
-                        users.map((user: User) => {
-                            if (user.district === selectedDistrict) {
-                                return (
-                                    <React.Fragment key={user.id}>
-                                        <UserRow
-                                            user={user}
+                            <Row justify="space-between" align="middle">
+                                <p></p>
+                                <h2
+                                    style={{
+                                        fontSize: "2rem",
+                                        textDecoration: "underline",
+                                        color: "#1890ff",
+                                        margin: 0,
+                                    }}
+                                >
+                                    <UserOutlined
+                                        style={{
+                                            color: "#1890ff",
+                                            fontSize: "2.75rem",
+                                        }}
+                                    />
+                                    Users
+                                </h2>
+                                <Tooltip title="Add New User" placement="left">
+                                    <Button
+                                        type="primary"
+                                        shape="circle"
+                                        onClick={() =>
+                                            setCreatingUserState(true)
+                                        }
+                                        icon={<UserAddOutlined />}
+                                    />
+                                </Tooltip>
+
+                                <Modal
+                                    visible={creatingUserState}
+                                    footer={[]}
+                                    onCancel={handleNewUserOnCancel}
+                                >
+                                    <h2>
+                                        <UserAddOutlined
+                                            style={{
+                                                color: "#1890ff",
+                                                fontSize: "2rem",
+                                            }}
+                                        />{" "}
+                                        Add a New User
+                                    </h2>
+                                    <Form
+                                        form={addUserForm}
+                                        name="userToAdd"
+                                        onFinish={addUserOnFinish}
+                                        scrollToFirstError
+                                        labelCol={{
+                                            span: 24,
+                                        }}
+                                    >
+                                        <NewUserForm
                                             districts={districts}
-                                            handleEditState={handleEditState}
-                                            handleDeleteUser={handleDeleteUser}
+                                            isActive={isActiveNewUser}
+                                            setIsActive={setIsActiveNewUser}
                                         />
-                                    </React.Fragment>
-                                );
-                            }
-                        })}
-                </ul>
-            </div>
-        </div>
+                                        <Form.Item
+                                            style={{ textAlign: "right" }}
+                                        >
+                                            <Button
+                                                icon={<PlusOutlined />}
+                                                type="primary"
+                                                htmlType="submit"
+                                                size="large"
+                                            >
+                                                Add User
+                                            </Button>
+                                        </Form.Item>
+                                    </Form>
+                                </Modal>
+                            </Row>
+
+                            <Row justify="end">
+                                <Filter
+                                    districts={districts}
+                                    showActiveUsersOnly={showActiveUsersOnly}
+                                    selectedDistrict={selectedDistrict}
+                                    handleSelectedDistrict={
+                                        handleSelectedDistrict
+                                    }
+                                    setShowActiveUsersOnly={
+                                        setShowActiveUsersOnly
+                                    }
+                                />
+                            </Row>
+                            <Row
+                                style={{
+                                    fontSize: "1rem",
+                                    color: "#1890ff",
+                                    fontWeight: 600,
+                                }}
+                            >
+                                <Col span={2}>Id</Col>
+                                <Col span={4}>Last Name</Col>
+                                <Col span={4}>First Name</Col>
+                                <Col span={2}>M.I.</Col>
+                                <Col span={4}>District</Col>
+                                <Col span={4}>Verified</Col>
+                                <Col span={4}>Created</Col>
+                            </Row>
+                        </Col>
+                    }
+                    dataSource={users}
+                    renderItem={(user) => {
+                        return showActiveUsersOnly ? (
+                            user.active &&
+                            (selectedDistrict === 0 ||
+                                user.district === selectedDistrict) ? ( // eslint-disable-next-line indent
+                                <UserRow // eslint-disable-next-line indent
+                                    user={user} // eslint-disable-next-line indent
+                                    districts={districts} // eslint-disable-next-line indent
+                                    handleEditState={handleEditState} // eslint-disable-next-line indent
+                                    handleDeleteUser={handleDeleteUser} // eslint-disable-next-line indent
+                                /> // eslint-disable-next-line indent
+                            ) : undefined
+                        ) : selectedDistrict === 0 ||
+                          user.district === selectedDistrict ? ( // eslint-disable-next-line indent
+                            <UserRow // eslint-disable-next-line indent
+                                user={user} // eslint-disable-next-line indent
+                                districts={districts} // eslint-disable-next-line indent
+                                handleEditState={handleEditState} // eslint-disable-next-line indent
+                                handleDeleteUser={handleDeleteUser} // eslint-disable-next-line indent
+                            /> // eslint-disable-next-line indent
+                        ) : undefined;
+                    }}
+                />
+
+                {userToEdit && (
+                    <Drawer
+                        onClose={handleEditUserOnCancel}
+                        visible={isEditState}
+                        footer={[]}
+                    >
+                        <h2>
+                            <EditOutlined
+                                style={{
+                                    color: "#1890ff",
+                                    fontSize: "2rem",
+                                }}
+                            />{" "}
+                            Edit User
+                        </h2>
+                        <Form
+                            form={editUserForm}
+                            name="userToEdit"
+                            onFinish={editUserOnFinish}
+                            scrollToFirstError
+                            labelCol={{
+                                span: 24,
+                            }}
+                        >
+                            <EditUserForm
+                                districts={districts}
+                                userToEdit={userToEdit}
+                            />
+                            <Form.Item style={{ textAlign: "center" }}>
+                                <Button
+                                    icon={<PlusOutlined />}
+                                    type="primary"
+                                    htmlType="submit"
+                                    size="large"
+                                >
+                                    Save Changes
+                                </Button>
+                            </Form.Item>
+                        </Form>
+                    </Drawer>
+                )}
+                {/* 
+                antd <BackTop/> and some other components like <Modal/> <Drawer/> use a deprecated findDOMNode and produces a warning.  Still functional, but no fix available at this time per stackoverflow and other developer driven resources.  Some mention to possible fixes using React.Forward refs, but unreliable per the current discussions.
+
+                Warning: 
+               "findDOMNode is deprecated in StrictMode. findDOMNode was passed an instance of DomWrapper which is inside StrictMode. Instead, add a ref directly to the element you want to reference. Learn more about using refs safely here:"
+                
+                research: stackoverflow, etc.
+                "findDOMNode has been deprecated. You should not use it. It seems like some libraries(Ant Design, Material-UI) are still using findDOMNode. So, you should just ignore this as it will be fixed when the library authors update the code."
+                */}
+                <BackTop
+                    style={{
+                        height: 40,
+                        width: 40,
+                        lineHeight: "40px",
+                        borderRadius: "50%",
+                        backgroundColor: "#1890ff",
+                        color: "#fff",
+                        textAlign: "center",
+                        fontSize: 14,
+                    }}
+                ></BackTop>
+            </Col>
+        </>
     );
 };
 

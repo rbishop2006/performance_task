@@ -1,81 +1,147 @@
+import { Row, Col, Form, Input, Select, Switch } from "antd";
+import { CloseOutlined, CheckOutlined } from "@ant-design/icons";
 import React from "react";
-import { District, User } from "../types/types";
+import { District } from "../types/types";
 
 const NewUserForm = ({
-    userToAdd,
     districts,
-    handleAddUser,
-    addNewUserSubmit,
+    isActive,
+    setIsActive,
 }: NewUserFormProps): JSX.Element => {
     return (
         <>
-            <form onSubmit={(e) => addNewUserSubmit(e)}>
-                <input
-                    placeholder={userToAdd.last_name}
-                    value={userToAdd.last_name}
-                    name={"last_name"}
-                    onChange={(e) => handleAddUser(e)}
-                />
-                <input
-                    placeholder={userToAdd.first_name}
-                    value={userToAdd.first_name}
-                    name={"first_name"}
-                    onChange={(e) => handleAddUser(e)}
-                />
-                <input
-                    placeholder={"middle initial (opt.)"}
-                    value={userToAdd.middle_initial || ""}
-                    name={"middle_initial"}
-                    onChange={(e) => handleAddUser(e)}
-                />
-                <input
-                    placeholder={"email"}
-                    value={userToAdd.email}
-                    name={"email"}
-                    onChange={(e) => handleAddUser(e)}
-                />
-
-                <select
-                    value={userToAdd.district}
-                    onChange={(e) => handleAddUser(e)}
-                    name="district"
-                >
-                    {districts && (
-                        <>
-                            <option key={0} value={0}>
-                                select district
-                            </option>
-                            {districts.map((d: District) => (
-                                <option key={d.id} value={d.id}>
-                                    {d.name}
-                                </option>
-                            ))}
-                        </>
-                    )}
-                </select>
-                <label>
-                    <input
-                        type="checkbox"
-                        name="active"
-                        checked={userToAdd.active}
-                        onChange={(e) => handleAddUser(e)}
-                    />
-                    Active?
-                </label>
-
-                <button type="submit">Create</button>
-            </form>
+            <Row gutter={8}>
+                <Col span={24}>
+                    <Form.Item
+                        name={"first_name"}
+                        label="First Name"
+                        rules={[
+                            {
+                                required: true,
+                                message:
+                                    "*required, only letters, no spaces or numbers",
+                            },
+                            {
+                                pattern: new RegExp(
+                                    /^[a-zA-Z@~`!@#$%^&*()_=+\\\\';:"\\/?>.<,-]+$/i
+                                ),
+                                message:
+                                    "*required, only letters, no spaces or numbers",
+                            },
+                        ]}
+                    >
+                        <Input required />
+                    </Form.Item>
+                </Col>
+                <Col span={24}>
+                    <Form.Item
+                        name={"last_name"}
+                        label="Last Name"
+                        rules={[
+                            {
+                                required: true,
+                                message:
+                                    "*required, only letters, no spaces or numbers",
+                            },
+                            {
+                                pattern: new RegExp(
+                                    /^[a-zA-Z@~`!@#$%^&*()_=+\\\\';:"\\/?>.<,-]+$/i
+                                ),
+                                message:
+                                    "*required, only letters, no spaces or numbers",
+                            },
+                        ]}
+                    >
+                        <Input required />
+                    </Form.Item>
+                </Col>
+                <Col span={24}>
+                    <Form.Item
+                        name={"middle_initial"}
+                        label="M.I. (*optional)"
+                        rules={[
+                            {
+                                required: false,
+                                message: "only letters, max 1 character",
+                            },
+                            {
+                                pattern: new RegExp(
+                                    /^[a-zA-Z@~`!@#$%^&*()_=+\\\\';:"\\/?>.<,-]+$/i
+                                ),
+                                message: "only letters, max 1 character",
+                            },
+                            {
+                                max: 1,
+                                message: "only letters, max 1 character",
+                            },
+                        ]}
+                    >
+                        <Input />
+                    </Form.Item>
+                </Col>
+                <Col span={24}>
+                    <Form.Item
+                        name="email"
+                        label={"Email"}
+                        rules={[
+                            {
+                                required: true,
+                                message: "*required,only valid email format",
+                            },
+                            {
+                                pattern: new RegExp(/\S+@\S+\.\S+/),
+                                message: "*required,only valid email format",
+                            },
+                        ]}
+                    >
+                        <Input type="email" required />
+                    </Form.Item>
+                </Col>
+                <Col span={24}>
+                    <Form.Item
+                        name="district"
+                        label="District"
+                        rules={[
+                            {
+                                required: true,
+                                message: "*required, please select a district",
+                            },
+                        ]}
+                    >
+                        <Select placeholder="Select a district">
+                            {districts && (
+                                <>
+                                    {districts.map((d: District) => (
+                                        <Select.Option key={d.id} value={d.id}>
+                                            {d.name}
+                                        </Select.Option>
+                                    ))}
+                                </>
+                            )}
+                        </Select>
+                    </Form.Item>
+                </Col>
+                <Col span={24}>
+                    <Form.Item name="active" label="Active">
+                        <Switch
+                            checked={isActive}
+                            onChange={() =>
+                                setIsActive((prevState: boolean) => !prevState)
+                            }
+                            checkedChildren={<CheckOutlined />}
+                            unCheckedChildren={<CloseOutlined />}
+                        />
+                    </Form.Item>
+                </Col>
+            </Row>
         </>
     );
 };
 
 interface NewUserFormProps {
-    userToAdd: User;
     districts: District[];
-    handleAddUser: (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => void;
-    addNewUserSubmit: (e: React.SyntheticEvent) => void;
+    isActive: boolean;
+    setIsActive: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default NewUserForm;
